@@ -134,3 +134,9 @@ Rebuild both with `make -C build && cp build/src/tome . && sh web/build.sh`.
   auto_more + center_player on (centring clamps at map edges), `<` walk, zoom/reset/rename/drag, Help, Sound/Music,
   `_web_request_save`, Ctrl-X → Play again. Not clicked: shop, Export/Import file dialogs (logic checked).
 - Docs link skipped (no other game links its web build). RVIP.md updated. Server killed, test saves deleted.
+
+## Source and changes
+
+- Base: **ToME 2.3.11**
+- Original source: https://github.com/tome2/tome2/tree/dac2d95 (tome2/tome2, commit dac2d95 (tag v2.3.11-ah))
+- Our changes: https://github.com/memmaker/tome2/compare/dac2d95...main (memmaker/tome2)
