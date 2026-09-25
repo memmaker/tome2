@@ -232,3 +232,5 @@ W:2:6:1
 W:3:4:1
 W:4:8:1
 W:4:9:1
+# Window 5: equipment (the web port's Equipment window; unused under X11)
+W:5:1:1

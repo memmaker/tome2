@@ -32,7 +32,7 @@ emcc -O2 -fcommon -std=gnu99 -DUSE_WEB -DUSE_PRECISE_CMOVIE -Isrc -Isrc/lua -w \
 	-sFORCE_FILESYSTEM -lidbfs.js -sENVIRONMENT=web \
 	--preload-file web/stage/lib@/tome2/lib
 
-cp web/index.html web/tome2.js "$OUT/"
+cp web/index.html web/rvip-wm.js web/tome2.js "$OUT/"
 # Sound effects (lib/xtra/sound, Dubtrain samples) and town music are
 # fetched by the page, not preloaded
 mkdir -p "$OUT/sound" && cp lib/xtra/sound/*.wav "$OUT/sound/"
