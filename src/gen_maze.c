@@ -139,7 +139,7 @@ void dig(maze_row *maze, int y, int x, int d)
 }
 
 
-bool_ level_generate_maze()
+bool_ level_generate_maze(cptr name)
 {
 	int i, j, d;
 	int y, dy = 0;

@@ -2091,6 +2091,24 @@ static void handle_button(Time time, int x, int y, int button,
 	/* The co-ordinates are only used in Angband format. */
 	pixel_to_square(&x, &y, x, y);
 
+	/* A plain click (no drag) in the main window: KEY_MOUSE for menus */
+	{
+		static int px = -1, py = -1;
+
+		if (press && button == 1)
+		{
+			px = x;
+			py = y;
+		}
+		else if (!press && button == 1 && (x == px) && (y == py) &&
+		         (Term == angband_term[0]))
+		{
+			mouse_click_x = x;
+			mouse_click_y = y;
+			Term_keypress(KEY_MOUSE);
+		}
+	}
+
 	if (press && button == 1) copy_x11_start(x, y);
 	if (!press && button == 1) copy_x11_end(time);
 	if (!press && button == 2) paste_x11_request(time);

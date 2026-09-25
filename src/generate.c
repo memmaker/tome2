@@ -288,7 +288,7 @@ static level_generator_type *level_generators = NULL;
 /*
  * Add a new generator
  */
-void add_level_generator(cptr name, bool_ (*generator)(), bool_ stairs, bool_ monsters, bool_ objects, bool_ miscs)
+void add_level_generator(cptr name, bool_ (*generator)(cptr), bool_ stairs, bool_ monsters, bool_ objects, bool_ miscs)
 {
 	level_generator_type *g;
 
@@ -6722,7 +6722,7 @@ static void fill_level(bool_ use_floor, byte smooth);
 /*
  * Generate a normal dungeon level
  */
-bool_ level_generate_dungeon()
+bool_ level_generate_dungeon(cptr name)
 {
 	int i, k, y, x, y1, x1, branch = get_branch();
 	dungeon_info_type *d_ptr = &d_info[dungeon_type];

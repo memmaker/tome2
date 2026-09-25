@@ -309,3 +309,8 @@ L:j:jam:Jam a door
 ?:1
 
 
+
+
+# Auto-explore (roguelike keyset)
+A:X
+C:1:^V

@@ -570,10 +570,10 @@ term *angband_term[ANGBAND_TERM_MAX];
 char angband_term_name[ANGBAND_TERM_MAX][80] =
 {
 	"ToME",
-	"Mirror",
+	"Inventory",
+	"Messages",
+	"Visible",
 	"Recall",
-	"Choice",
-	"Term-4",
 	"Term-5",
 	"Term-6",
 	"Term-7"

@@ -4396,6 +4396,28 @@ bool_ item_tester_okay(object_type *o_ptr)
 
 
 
+/*
+ * The item list in the main window (RVIP): which slot each row shows
+ * (inventory/equipment index, -(o_list index) for the floor, or
+ * ITEM_LIST_NONE), and the row with the cursor (-1: no cursor).
+ */
+int item_list_cursor = -1;
+int item_list_n = 0;
+int item_list_slot[24];
+int item_list_row = 1;
+
+static void item_list_mark(int j, int slot, int row, int col, cptr label)
+{
+	if (j >= 24) return;
+	item_list_slot[j] = slot;
+	if (j + 1 > item_list_n) item_list_n = j + 1;
+	item_list_row = row;
+
+	if (j != item_list_cursor) return;
+	if (col) Term_putstr(col - 1, row + j, 1, TERM_YELLOW, ">");
+	Term_putstr(col, row + j, -1, TERM_YELLOW, label);
+}
+
 void show_equip_aux(bool_ mirror, bool_ everything);
 void show_inven_aux(bool_ mirror, bool_ everything);
 
@@ -4460,20 +4482,23 @@ void show_inven_aux(bool_ mirror, bool_ everything)
 	/* Starting row */
 	row = mirror ? 0 : 1;
 
+	if (!mirror) item_list_n = 0;
+
 	/* Starting column */
 	col = mirror ? 0 : 50;
 
 	/* Default "max-length" */
 	len = 79 - col;
 
-	/* Maximum space allowed for descriptions */
-	lim = 79 - 3;
+	/* Maximum space allowed for descriptions (subwindows: their width) */
+	lim = (mirror ? wid : 80) - 4;
 
 	/* Require space for weight (if needed) */
 	if (show_weights) lim -= 9;
 
 	/* Require space for icon */
 	if (show_inven_graph) lim -= 2;
+	if (lim < 1) lim = 1;
 
 	/* Find the "final" slot */
 	for (i = 0; i < INVEN_PACK; i++)
@@ -4557,6 +4582,9 @@ void show_inven_aux(bool_ mirror, bool_ everything)
 		/* Clear the line with the (possibly indented) index */
 		c_put_str(get_item_letter_color(o_ptr), tmp_val, row + j, col);
 
+		/* Remember the row, and show the cursor */
+		if (!mirror) item_list_mark(j, (i > 0) ? i - 1 : ITEM_LIST_NONE, row, col, tmp_val);
+
 		/* Display graphics for object, if desired */
 		if (show_inven_graph)
 		{
@@ -4566,6 +4594,9 @@ void show_inven_aux(bool_ mirror, bool_ everything)
 			if (!o_ptr->k_idx) c = ' ';
 
 			Term_draw(col + 3, row + j, a, c);
+
+			/* A big tile covers the next cell too */
+			if (use_bigtile && (a & 0x80) && o_ptr->k_idx) Term_draw(col + 4, row + j, 255, 255);
 		}
 
 
@@ -4635,14 +4666,16 @@ void show_equip_aux(bool_ mirror, bool_ everything)
 	/* Starting row */
 	row = mirror ? 0 : 1;
 
+	if (!mirror) item_list_n = 0;
+
 	/* Starting column */
 	col = mirror ? 0 : 50;
 
 	/* Maximal length */
 	len = 79 - col;
 
-	/* Maximum space allowed for descriptions */
-	lim = 79 - 3;
+	/* Maximum space allowed for descriptions (subwindows: their width) */
+	lim = (mirror ? wid : 80) - 4;
 
 	/* Require space for labels (if needed) */
 	if (show_labels) lim -= (14 + 2);
@@ -4651,6 +4684,7 @@ void show_equip_aux(bool_ mirror, bool_ everything)
 	if (show_weights) lim -= 9;
 
 	if (show_equip_graph) lim -= 2;
+	if (lim < 1) lim = 1;
 
 	/* Scan the equipment list */
 	idx = 0;
@@ -4787,6 +4821,9 @@ void show_equip_aux(bool_ mirror, bool_ everything)
 		/* Clear the line with the (possibly indented) index */
 		c_put_str(get_item_letter_color(o_ptr), tmp_val, row + j, col);
 
+		/* Remember the row, and show the cursor */
+		if (!mirror) item_list_mark(j, (out_index[j] >= 0) ? out_rindex[j] : ITEM_LIST_NONE, row, col, tmp_val);
+
 		if (show_equip_graph)
 		{
 			byte a = object_attr(o_ptr);
@@ -4795,6 +4832,9 @@ void show_equip_aux(bool_ mirror, bool_ everything)
 			if (!o_ptr->k_idx) c = ' ';
 
 			Term_draw(col + 3, row + j, a, c);
+
+			/* A big tile covers the next cell too */
+			if (use_bigtile && (a & 0x80) && o_ptr->k_idx) Term_draw(col + 4, row + j, 255, 255);
 		}
 
 		/* Use labels */
@@ -5118,6 +5158,8 @@ void show_floor(int y, int x)
 	/* Scan for objects in the grid, using item_tester_okay() */
 	(void) scan_floor(floor_list, &floor_num, y, x, 0x01);
 
+	item_list_n = 0;
+
 	/* Display the inventory */
 	for (k = 0, i = 0; i < floor_num; i++)
 	{
@@ -5172,6 +5214,9 @@ void show_floor(int y, int x)
 		/* Clear the line with the (possibly indented) index */
 		put_str(tmp_val, j + 1, col);
 
+		/* Remember the row, and show the cursor */
+		item_list_mark(j, -i, 1, col, tmp_val);
+
 		/* Display the entry itself */
 		c_put_str(out_color[j], out_desc[j], j + 1, col + 3);
 
@@ -5220,7 +5265,46 @@ bool_ get_item_floor(int *cp, cptr pmt, cptr str, int mode)
 
 	int floor_num, floor_list[23], floor_top = 0;
 
+	/* Cursor row in the shown list (RVIP) */
+	int cur = 0;
+
 	k = 0;
+
+	/* An item chosen beforehand from the inventory screen (RVIP) */
+	if (item_pre_cmd)
+	{
+		bool_ mine = (command_cmd == item_pre_cmd);
+		bool_ ok;
+
+		k = item_pre_slot;
+		item_pre_cmd = 0;
+
+		if (mine)
+		{
+			if (k >= 0)
+				ok = ((k >= INVEN_WIELD) ? (mode & USE_EQUIP) : (mode & USE_INVEN)) && get_item_okay(k);
+			else
+				ok = (mode & USE_FLOOR) && o_list[-k].k_idx && item_tester_okay(&o_list[-k]);
+
+			item_tester_tval = 0;
+			item_tester_hook = NULL;
+
+			if (!ok)
+			{
+				msg_print("You cannot do that with this item.");
+				return (FALSE);
+			}
+			if (!get_item_allow(k)) return (FALSE);
+
+			*cp = k;
+			if (k >= 0) object_track(&p_ptr->inventory[k]);
+			else object_track(&o_list[-k]);
+			repeat_push(k);
+			return (TRUE);
+		}
+
+		k = 0;
+	}
 
 	/* Get the item index */
 	if (repeat_pull(cp))
@@ -5408,40 +5492,48 @@ bool_ get_item_floor(int *cp, cptr pmt, cptr str, int mode)
 			window_stuff();
 		}
 
-		/* Inventory screen */
-		if (command_wrk == (USE_INVEN))
+		/* Show the list with the cursor (twice if the cursor was off its end) */
+		for (j = 0; j < 2; j++)
 		{
-			/* Extract the legal requests */
-			n1 = I2A(i1);
-			n2 = I2A(i2);
+			item_list_cursor = cur;
 
-			/* Redraw */
-			show_inven();
-		}
+			/* Inventory screen */
+			if (command_wrk == (USE_INVEN))
+			{
+				/* Extract the legal requests */
+				n1 = I2A(i1);
+				n2 = I2A(i2);
 
-		/* Equipment screen */
-		else if (command_wrk == (USE_EQUIP))
-		{
-			/* Extract the legal requests */
-			n1 = I2A(e1 - INVEN_WIELD);
-			n2 = I2A(e2 - INVEN_WIELD);
+				/* Redraw */
+				show_inven();
+			}
 
-			/* Redraw */
-			show_equip();
-		}
+			/* Equipment screen */
+			else if (command_wrk == (USE_EQUIP))
+			{
+				/* Extract the legal requests */
+				n1 = I2A(e1 - INVEN_WIELD);
+				n2 = I2A(e2 - INVEN_WIELD);
 
-		/* Floor screen */
-		else if (command_wrk == (USE_FLOOR))
-		{
-			j = floor_top;
-			k = MIN(floor_top + 23, floor_num) - 1;
+				/* Redraw */
+				show_equip();
+			}
 
-			/* Extract the legal requests */
-			n1 = I2A(j - floor_top);
-			n2 = I2A(k - floor_top);
+			/* Floor screen */
+			else if (command_wrk == (USE_FLOOR))
+			{
+				k = MIN(floor_top + 23, floor_num) - 1;
 
-			/* Redraw */
-			show_floor(p_ptr->py, p_ptr->px);
+				/* Extract the legal requests */
+				n1 = I2A(0);
+				n2 = I2A(k - floor_top);
+
+				/* Redraw */
+				show_floor(p_ptr->py, p_ptr->px);
+			}
+
+			if ((cur < item_list_n) || !item_list_n) break;
+			cur = item_list_n - 1;
 		}
 
 		/* Viewing inventory */
@@ -5533,6 +5625,104 @@ bool_ get_item_floor(int *cp, cptr pmt, cptr str, int mode)
 
 		/* Get a key */
 		which = inkey();
+
+		/* Cursor keys (RVIP): digits that are not tags, and clicks */
+		if ((which == KEY_MOUSE) || (which == '.') || (isdigit((byte)which) &&
+		    (strchr("24568", which) || !get_tag(&k, which))))
+		{
+			int slot, dir = 0;
+
+			if (which == KEY_MOUSE)
+			{
+				j = mouse_click_y - item_list_row;
+				if ((j < 0) || (j >= item_list_n))
+				{
+					done = TRUE;
+					continue;
+				}
+				cur = j;
+				which = '5';
+			}
+
+			switch (which)
+			{
+			case '0':
+			case '.':
+				done = TRUE;
+				continue;
+			case '8': case '7': case '9':
+				dir = -1;
+				break;
+			case '2': case '1': case '3':
+				dir = 1;
+				break;
+			case '4': case '6':
+				{
+					/* Next/previous of the lists that can be used */
+					int lists[3], nl = 0, at = 0;
+
+					if (allow_inven) lists[nl++] = USE_INVEN;
+					if (allow_equip) lists[nl++] = USE_EQUIP;
+					if (allow_floor) lists[nl++] = USE_FLOOR;
+					for (j = 0; j < nl; j++) if (lists[j] == command_wrk) at = j;
+					if (nl < 2)
+					{
+						bell();
+						continue;
+					}
+					command_wrk = lists[(at + ((which == '6') ? 1 : nl - 1)) % nl];
+					cur = 0;
+					screen_load();
+					screen_save();
+					continue;
+				}
+			}
+
+			/* Move, skipping rows that cannot be chosen */
+			if (dir)
+			{
+				for (j = 0; j < item_list_n; j++)
+				{
+					cur = (cur + dir + item_list_n) % item_list_n;
+					if (item_list_slot[cur] != ITEM_LIST_NONE) break;
+				}
+				continue;
+			}
+
+			/* Choose the item under the cursor */
+			if ((cur >= item_list_n) || ((slot = item_list_slot[cur]) == ITEM_LIST_NONE) ||
+			    ((slot >= 0) && !get_item_okay(slot)))
+			{
+				bell();
+				continue;
+			}
+			if (!get_item_allow(slot))
+			{
+				done = TRUE;
+				continue;
+			}
+			(*cp) = slot;
+			item = TRUE;
+			done = TRUE;
+			continue;
+		}
+
+		/* Enter chooses the item under the cursor, if there is one */
+		if (((which == '\r') || (which == '\n')) && (cur < item_list_n) &&
+		    (item_list_slot[cur] != ITEM_LIST_NONE) &&
+		    ((item_list_slot[cur] < 0) || get_item_okay(item_list_slot[cur])))
+		{
+			k = item_list_slot[cur];
+			if (!get_item_allow(k))
+			{
+				done = TRUE;
+				continue;
+			}
+			(*cp) = k;
+			item = TRUE;
+			done = TRUE;
+			continue;
+		}
 
 		/* Parse it */
 		switch (which)
@@ -5831,6 +6021,9 @@ bool_ get_item_floor(int *cp, cptr pmt, cptr str, int mode)
 			}
 		}
 	}
+
+	/* No cursor outside the prompt */
+	item_list_cursor = -1;
 
 	/* Fix the screen */
 	screen_load();

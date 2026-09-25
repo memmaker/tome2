@@ -139,13 +139,19 @@ static void do_subrace(int flag)
 	char buf[81];
 
 	if (flag == LS_SAVE)
+	{
 		strncpy(buf, sr_ptr->title + rmp_name, 80);
+		buf[80] = '\0';
+	}
 	do_string(buf, 80, flag);
 	if (flag == LS_LOAD)
 		strncpy(sr_ptr->title + rmp_name, buf, 80);
 
 	if (flag == LS_SAVE)
+	{
 		strncpy(buf, sr_ptr->desc + rmp_text, 80);
+		buf[80] = '\0';
+	}
 	do_string(buf, 80, flag);
 	if (flag == LS_LOAD)
 		strncpy(sr_ptr->desc + rmp_text, buf, 80);
@@ -838,6 +844,14 @@ bool_ save_player(void)
 	}
 
 	save_savefile_names();
+
+#ifdef USE_WEB
+	/* Write the save straight to IndexedDB */
+	{
+		extern void web_sync_files(void);
+		web_sync_files();
+	}
+#endif
 
 	/* Return the result */
 	return (result);

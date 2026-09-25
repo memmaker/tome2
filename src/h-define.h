@@ -106,6 +106,9 @@
 #define KTRL(X)	((X) & 0x1F)
 #define ESCAPE	'\033'
 
+/* A mouse click in the main window (RVIP); see mouse_click_x/y */
+#define KEY_MOUSE	((char)0xFF)
+
 
 #endif
 

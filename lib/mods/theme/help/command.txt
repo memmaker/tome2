@@ -108,7 +108,7 @@ that you can always, for example, use "\" + "." + "6", to specify "run east".
  *****command.txt*38[u  Use a staff]                          *****command.txt*39[U  Use bonus power (if any)]
  *****command.txt*40[v  Throw an item]                        *****command.txt*41[V  Version Info]
  *****command.txt*42[w  Wear/wield equipment]                 W  (unused)
- *****command.txt*43[x  Engrave the floor]                    X  (unused)
+ *****command.txt*43[x  Engrave the floor]                    *****command.txt*130[X  Auto-explore]
  *****command.txt*44[y  Give item to monster]                 *****command.txt*96[Y  Chat with a monster]
  *****command.txt*45[z  Zap a rod]                            *****command.txt*46[Z  Steal]
  *****command.txt*47[!  Interact with system]                *****debug.txt*101[^A  (special - debug command)]
@@ -123,11 +123,11 @@ that you can always, for example, use "\" + "." + "6", to specify "run east".
  )  (unused)                            ^J  (special - linefeed)
  *****command.txt*58[{  Inscribe an object]                  ^K  (unused)
  *****command.txt*59[}  Uninscribe an object]                ^L  (unused)
- [  (unused)                            ^M  (special - return)
+ [  (unused)                            *****command.txt*131[Return  Command menu]
  ]  (unused)                            ^N  (unused)
  *****command.txt*60[-  Walk (flip pickup)]                  ^O  (unused)
  *****command.txt*61[_  Re-Enter store]                      *****command.txt*62[^P  Show previous messages]
- *****command.txt*63[+  Alter grid]                          *****command.txt*64[^Q  Quit to next midi song]
+ *****command.txt*63[+  Alter grid]                          *****command.txt*64[^Q  Quest log             ]
  *****command.txt*65[=  Set options]                         *****command.txt*66[^R  Redraw the screen]
  *****command.txt*67[;  Walk (with pickup)]                  *****command.txt*68[^S  Save and don't quit]
  *****command.txt*69[:  Take notes]                          *****command.txt*70[^T  Time of the day]
@@ -188,12 +188,12 @@ that you can always, for example, use "\" + "." + "6", to specify "run east".
  ]*****command.txt*43[  Engrave the floor]                   *****command.txt*95[^N  (tunnel - south east)]
  *****command.txt*60[-  Walk (flip pickup)]                  *****command.txt*21[^O  Cure meat]
  *****command.txt*61[_  Enter store]                         *****command.txt*62[^P  Show previous messages]
- *****command.txt*63[+  Alter grid]                          *****command.txt*64[^Q  Quit to next midi song]
+ *****command.txt*63[+  Alter grid]                          *****command.txt*64[^Q  Quest log             ]
  *****command.txt*65[=  Set options]                         *****command.txt*66[^R  Redraw the screen]
  *****command.txt*67[;  Walk (with pickup)]                  *****command.txt*68[^S  Save and don't quit]
  *****command.txt*69[:  Take notes]                          *****command.txt*37[^T  Dig a Tunnel]
  *****command.txt*44['  Give object to monster]              *****command.txt*95[^U  (tunnel - north east)]
- *****command.txt*71["  Enter a user pref command]           ^V  (unused)
+ *****command.txt*71["  Enter a user pref command]           *****command.txt*130[^V  Auto-explore]
  *****command.txt*76[,  Run]                                 ^W  (special - wizard mode)
  *****command.txt*74[<  Go up staircase]                     *****command.txt*75[^X  Save and quit]
  *****command.txt*72[.  Stay still (with pickup)]            *****command.txt*95[^Y  (tunnel - north west)]
@@ -490,6 +490,26 @@ for a quantity will convert any "letters" into the maximal legal value.
         to set options to allow wands, staves, and other such objects to
         stack.  Each object has a weight, and if you carry more objects
         than your strength permits, you will begin to slow down.
+
+        The list has a cursor (8/2 or the arrow keys move it, 4/6 switch
+        between inventory and equipment).  Pressing an item's letter does
+        its main action (eat, quaff, read, aim, use, zap, browse, wear, take
+        off...), Shift+letter drops it and Ctrl+letter inspects it.  Return,
+        Space, 5 or a mouse click on the highlighted item opens a menu of
+        everything you can do with it; the usual command keys work there
+        too.  On the keypad, + is the main action, - drops, * inspects and
+        0 or . closes the list.  After an action the list opens again,
+        unless a monster is in view.  Any other key is a normal command.
+
+        Every "which item?" prompt shows the same cursor: move it and
+        choose with 5, Return or a click; letters and @-tags work as before.
+~~~~~131
+[[[[[GCommand menu (Return)]
+        Pressing Return (Enter) opens a menu of every command in the game,
+        grouped like this help file, with its key shown next to it.  Move
+        with 8/2 or the arrow keys, choose with Return, 5 or a mouse click
+        (or press the letter / command key shown), go back with 4 and close
+        with Escape.  You never need to remember a key to play.
 ~~~~~9 
 [[[[[GEquipment list (e)]
         Use this command to display a list of the objects currently being
@@ -564,26 +584,42 @@ for a quantity will convert any "letters" into the maximal legal value.
         direction.  You may also use shift plus the "roguelike" direction
         keys (roguelike keyset), or shift plus the "original" direction keys
         on the keypad (both keysets, some machines) to run in a direction.
+~~~~~130
+[[[[[GAuto-explore (X) or Auto-explore (^V)]
+        Walks towards the nearest part of the level you have not seen yet,
+        one step per turn, opening doors and avoiding known traps and lava.
+        It never picks locks: it stops in front of a locked door, and when
+        you start it again it skips that door and explores elsewhere.
+        It stops as soon as you are disturbed (a monster comes into view,
+        you take damage, a key is pressed) and will not start while a
+        hostile monster is in view.  It tells you when there is nothing
+        left to explore.
+
 ~~~~~74
 [[[[[GGo up staircase (<)]
-        Climbs up an up staircase you are standing on.  There is always at
-        least one staircase going up on every level (this doesn't mean it's
-        easy to find) except for the surface, where '<' will bring up the
-        wilderness map.  Going up a staircase will take you to a new dungeon
-        level unless you are at the first level of the dungeon, in which case
-        you will return to the surface.  Note that whenever you leave a dungeon
-        level, you will never find it again, unless the level contains a dungeon
-        town.  This means that for all intents and purposes, any objects on that
-        level are destroyed. This includes unknown artifacts unless the "Create
-        characters in preserve mode" option was set when your character was
-        created, in which case the artifacts may show up again later.
+        Climbs up an up staircase you are standing on. If you are not on one,
+        you walk to the nearest up staircase you know of and take it. There is
+        always at least one staircase going up on every level (this doesn't
+        mean it's easy to find) except for the surface, where '<' will bring
+        up the wilderness map. Going up a staircase will take you to a new
+        dungeon level unless you are at the first level of the dungeon, in
+        which case you will return to the surface. Note that whenever you
+        leave a dungeon level, you will never find it again, unless the
+        level contains a dungeon town.
+        This means that for all intents and purposes, any objects on that
+        level are destroyed. This includes unknown artifacts unless the
+        "Create characters in preserve mode" option was set when your
+        character was created, in which case the artifacts may show up again
+        later.
 ~~~~~77
 [[[[[GGo down staircase (>)]
-        Descends a down staircase you are standing on.  There are always
-        at least two staircases going down on each level, except for the
-        last level of a dungeon, and some "quest" levels, which have none until
-        the quest monsters are killed.  Going down a staircase will take you
-        to a new dungeon level.  See "Go Up Staircase" for more info.
+        Descends a down staircase you are standing on. If you are not on one,
+        you walk to the nearest down staircase you know of and take it (quest
+        entrances are never walked to). There are always at least two
+        staircases going down on each level, except for the last level of a
+        dungeon, and some "quest" levels, which have none until the quest
+        monsters are killed. Going down a staircase will take you to a new
+        dungeon level. See "Go Up Staircase" for more info.
         
         This command is also used to enter Void Jumpgates, and to zoom in from
         the wilderness map.
@@ -1212,12 +1248,9 @@ for a quantity will convert any "letters" into the maximal legal value.
         This command dumps a "snap-shot" of the current screen to the file
         "dump.txt", including encoded color information.
 ~~~~~64
-[[[[[GQuit to next midi song (^Q)]
-        In the DOS binary (and maybe Windows) of ToME, it is possible for
-        the game to play any midi song in the lib/xtra/music directory. This
-        command allows the player to force the game to finish the current song
-        and move on to another one (i.e. if you are tired of hearing the current
-        song, you can change it).
+[[[[[GQuest log (^Q)]
+        Shows the quests you have been given, with their current status
+        and what is left to do.
 ~~~~~80
 [[[[[GDo cmovies (|)]
         The cmovie command (press | key in both normal or roguelike set) allows

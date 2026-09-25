@@ -591,6 +591,19 @@ usage:
 	}
 #endif
 
+#ifdef USE_WEB
+	/* The browser front end; named "x11" so the X11 pref files are used */
+	if (!done)
+	{
+		extern errr init_web(int, char**);
+		if (0 == init_web(argc, argv))
+		{
+			ANGBAND_SYS = "x11";
+			done = TRUE;
+		}
+	}
+#endif
+
 #ifdef USE_X11
 	/* Attempt to use the "main-x11.c" support */
 	if (!done && (!mstr || (streq(mstr, "x11"))))

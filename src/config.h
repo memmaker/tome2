@@ -239,7 +239,8 @@
 #define PRIVATE_USER_PATH_APEX
 #define PRIVATE_USER_PATH_MODULES
 #else
-#define PRIVATE_USER_PATH "~/.tome"
+/* User files and saves stay in the game folder: lib/user/2.3 (RVIP) */
+#define PRIVATE_USER_PATH "./lib/user"
 #define PRIVATE_USER_PATH_APEX
 #endif
 

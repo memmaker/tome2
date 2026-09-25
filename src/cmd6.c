@@ -907,7 +907,7 @@ static void corpse_effect(object_type *o_ptr, bool_ cutting)
 /*
  * Hook to determine if an object is eatable
  */
-static bool_ item_tester_hook_eatable(object_type *o_ptr)
+bool_ item_tester_hook_eatable(object_type *o_ptr)
 {
 	/* Foods and, well, corpses are edible */
 	if ((o_ptr->tval == TV_FOOD) || (o_ptr->tval == TV_CORPSE)) return (TRUE);
@@ -1730,7 +1730,7 @@ void do_cmd_cure_meat(void)
 /*
  * Hook to determine if an object is quaffable
  */
-static bool_ item_tester_hook_quaffable(object_type *o_ptr)
+bool_ item_tester_hook_quaffable(object_type *o_ptr)
 {
 	if ((o_ptr->tval == TV_POTION) || (o_ptr->tval == TV_POTION2)) return (TRUE);
 
@@ -2825,7 +2825,7 @@ bool_ curse_weapon(void)
 /*
  * Hook to determine if an object is readable
  */
-static bool_ item_tester_hook_readable(object_type *o_ptr)
+bool_ item_tester_hook_readable(object_type *o_ptr)
 {
 	if ((o_ptr->tval == TV_SCROLL) || (o_ptr->tval == TV_PARCHMENT)) return (TRUE);
 
@@ -3985,7 +3985,7 @@ void do_cmd_aim_wand(void)
 /*
  * Hook to determine if an object is zapable
  */
-static bool_ item_tester_hook_zapable(object_type *o_ptr)
+bool_ item_tester_hook_zapable(object_type *o_ptr)
 {
 	if ((o_ptr->tval == TV_ROD) || (o_ptr->tval == TV_ROD_MAIN)) return (TRUE);
 
@@ -4552,7 +4552,7 @@ void do_cmd_zap_rod(void)
 /*
  * Hook to determine if an object is activable
  */
-static bool_ item_tester_hook_activate(object_type *o_ptr)
+bool_ item_tester_hook_activate(object_type *o_ptr)
 {
 	u32b f1, f2, f3, f4, f5, esp;
 

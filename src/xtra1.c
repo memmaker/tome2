@@ -1431,68 +1431,98 @@ static void fix_m_list(void)
 			c++;
 		}
 
-		/* Are monsters visible? */
-		if (c)
+		/* Monsters, then visible items, in one column */
 		{
-			int w, h, num = 0;
+			int w, h, row = 0, n_obj = 0, k;
+			static char names[64][80];
+			static int counts[64];
+			static byte colors[64];
 
 			(void)Term_get_size(&w, &h);
 
-			c_prt(TERM_WHITE, format("You can see %d monster%s", c, (c > 1 ? "s:" : ":")), 0, 0);
-
-			for (i = 1; i < max_r_idx; i++)
+			if (c)
 			{
-				monster_race *r_ptr = &r_info[i];
+				c_prt(TERM_WHITE, format("You can see %d monster%s", c, (c > 1 ? "s:" : ":")), row++, 0);
 
-				/* Default Colour */
-				byte attr = TERM_SLATE;
-
-				/* Only visible monsters */
-				if (!r_ptr->total_visible) continue;
-
-				/* Uniques */
-				if (r_ptr->flags1 & RF1_UNIQUE)
+				for (i = 1; i < max_r_idx && row < h; i++)
 				{
-					attr = TERM_L_BLUE;
-				}
+					monster_race *r_ptr = &r_info[i];
 
-				/* Have we ever killed one? */
-				if (r_ptr->r_tkills)
-				{
-					if (r_ptr->level > dun_level)
+					/* Default Colour */
+					byte attr = TERM_SLATE;
+
+					/* Only visible monsters */
+					if (!r_ptr->total_visible) continue;
+
+					/* Uniques */
+					if (r_ptr->flags1 & RF1_UNIQUE) attr = TERM_L_BLUE;
+
+					/* Have we ever killed one? */
+					if (r_ptr->r_tkills)
 					{
-						attr = TERM_VIOLET;
-
-						if (r_ptr->flags1 & RF1_UNIQUE)
+						if (r_ptr->level > dun_level)
 						{
-							attr = TERM_RED;
+							attr = TERM_VIOLET;
+							if (r_ptr->flags1 & RF1_UNIQUE) attr = TERM_RED;
 						}
 					}
-				}
-				else
-				{
-					if (!(r_ptr->flags1 & RF1_UNIQUE)) attr = TERM_GREEN;
-				}
+					else
+					{
+						if (!(r_ptr->flags1 & RF1_UNIQUE)) attr = TERM_GREEN;
+					}
 
-
-				/* Dump the monster name */
-				if (r_ptr->total_visible == 1)
-				{
-					c_prt(attr, (r_name + r_ptr->name), (num % (h - 1)) + 1, (num / (h - 1) * 26));
+					if (r_ptr->total_visible == 1)
+						c_prt(attr, (r_name + r_ptr->name), row++, 1);
+					else
+						c_prt(attr, format("%s (x%d)", r_name + r_ptr->name, r_ptr->total_visible), row++, 1);
 				}
-				else
-				{
-					c_prt(attr, format("%s (x%d)", r_name + r_ptr->name, r_ptr->total_visible), (num % (h - 1)) + 1, (num / (h - 1)) * 26);
-				}
-
-				num++;
-
+			}
+			else
+			{
+				c_prt(TERM_WHITE, "You see no monsters.", row++, 0);
 			}
 
-		}
-		else
-		{
-			c_prt(TERM_WHITE, "You see no monsters.", 0, 0);
+			/* Visible items: known objects on the floor in line of sight,
+			 * grouped by description */
+			for (i = 1; i < o_max; i++)
+			{
+				object_type *o_ptr = &o_list[i];
+				char buf[80];
+
+				if (!o_ptr->k_idx || !o_ptr->marked || !o_ptr->iy) continue;
+				if (!player_has_los_bold(o_ptr->iy, o_ptr->ix)) continue;
+
+				object_desc(buf, o_ptr, TRUE, 0);
+				for (k = 0; k < n_obj; k++) if (streq(names[k], buf)) break;
+				if (k < n_obj) { counts[k] += o_ptr->number; continue; }
+				if (n_obj == 64) continue;
+				strncpy(names[n_obj], buf, sizeof(names[0]) - 1);
+				names[n_obj][sizeof(names[0]) - 1] = '\0';
+				counts[n_obj] = o_ptr->number;
+				colors[n_obj] = tval_to_attr[o_ptr->tval % 128];
+				n_obj++;
+			}
+
+			row++;
+			if (row < h)
+			{
+				if (n_obj)
+					c_prt(TERM_WHITE, format("You can see %d item%s", n_obj, (n_obj > 1 ? "s:" : ":")), row++, 0);
+				else
+					c_prt(TERM_WHITE, "You see no items.", row++, 0);
+			}
+			for (k = 0; k < n_obj; k++)
+			{
+				if (row >= h - 1 && k < n_obj - 1)
+				{
+					c_prt(TERM_SLATE, format("...and %d more", n_obj - k), row, 1);
+					break;
+				}
+				if (counts[k] > 1)
+					c_prt(colors[k], format("%s (x%d)", names[k], counts[k]), row++, 1);
+				else
+					c_prt(colors[k], names[k], row++, 1);
+			}
 		}
 
 		/* Fresh */
@@ -3062,8 +3092,9 @@ void calc_bonuses(bool_ silent)
 		}
 
 
-		/* Values: 3, 4, ..., 17 */
-		if (use <= 18) ind = (use - 3);
+		/* Values: 3, 4, ..., 17 (stats are still 0 early in birth) */
+		if (use <= 3) ind = 0;
+		else if (use <= 18) ind = (use - 3);
 
 		/* Ranges: 18/00-18/09, ..., 18/210-18/219 */
 		else if (use <= 18 + 219) ind = (15 + (use - 18) / 10);

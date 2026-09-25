@@ -14,63 +14,317 @@
 
 
 /*
+ * Inventory and equipment screens with a cursor and item menus (RVIP).
+ *
+ * The screen does not run commands itself: it queues the command key in
+ * command_new and the chosen item in item_pre_slot, and get_item() hands
+ * that item to the command. So every command keeps its own checks and
+ * prompts. inven_screen_after() (called after each command) reopens the
+ * list once the action is done.
+ */
+s16b item_pre_cmd = 0;
+int item_pre_slot = 0;
+static bool_ item_pre_fresh = FALSE;
+static char inven_reopen = 0;
+
+extern bool_ item_tester_hook_eatable(object_type *o_ptr);
+extern bool_ item_tester_hook_quaffable(object_type *o_ptr);
+extern bool_ item_tester_hook_readable(object_type *o_ptr);
+extern bool_ item_tester_hook_zapable(object_type *o_ptr);
+extern bool_ item_tester_hook_activate(object_type *o_ptr);
+extern bool_ item_tester_hook_browsable(object_type *o_ptr);
+static bool_ item_tester_hook_wear(object_type *o_ptr);
+static bool_ item_tester_refill_lantern(object_type *o_ptr);
+static bool_ item_tester_refill_torch(object_type *o_ptr);
+
+/* Where an action may take its item from */
+#define IA_INVEN 0x01
+#define IA_EQUIP 0x02
+
+static bool_ ia_eat(object_type *o_ptr) { return item_tester_hook_eatable(o_ptr); }
+static bool_ ia_quaff(object_type *o_ptr) { return item_tester_hook_quaffable(o_ptr); }
+static bool_ ia_read(object_type *o_ptr) { return item_tester_hook_readable(o_ptr); }
+static bool_ ia_aim(object_type *o_ptr) { return (o_ptr->tval == TV_WAND); }
+static bool_ ia_staff(object_type *o_ptr) { return (o_ptr->tval == TV_STAFF); }
+static bool_ ia_zap(object_type *o_ptr) { return item_tester_hook_zapable(o_ptr); }
+static bool_ ia_browse(object_type *o_ptr) { return item_tester_hook_browsable(o_ptr); }
+static bool_ ia_wear(object_type *o_ptr) { return item_tester_hook_wear(o_ptr); }
+static bool_ ia_any(object_type *o_ptr) { return (TRUE); }
+static bool_ ia_activate(object_type *o_ptr) { return item_tester_hook_activate(o_ptr); }
+static bool_ ia_refill(object_type *o_ptr)
+{
+	return (item_tester_refill_lantern(o_ptr) || item_tester_refill_torch(o_ptr));
+}
+static bool_ ia_fire(object_type *o_ptr) { return (p_ptr->tval_ammo && (o_ptr->tval == p_ptr->tval_ammo)); }
+static bool_ ia_corpse(object_type *o_ptr) { return (o_ptr->tval == TV_CORPSE); }
+static bool_ ia_uninscribe(object_type *o_ptr) { return (o_ptr->note != 0); }
+
+/* Every item command, in menu order; the first that fits is the main action */
+static const struct
+{
+	cptr name;
+	s16b cmd;
+	byte where;
+	bool_ (*ok)(object_type *o_ptr);
+}
+item_actions[] =
+{
+	{ "Eat", 'E', IA_INVEN, ia_eat },
+	{ "Quaff", 'q', IA_INVEN, ia_quaff },
+	{ "Read", 'r', IA_INVEN, ia_read },
+	{ "Aim", 'a', IA_INVEN, ia_aim },
+	{ "Use", 'u', IA_INVEN, ia_staff },
+	{ "Zap", 'z', IA_INVEN, ia_zap },
+	{ "Browse", 'b', IA_INVEN | IA_EQUIP, ia_browse },
+	{ "Wear/wield", 'w', IA_INVEN, ia_wear },
+	{ "Take off", 't', IA_EQUIP, ia_any },
+	{ "Refuel with it", 'F', IA_INVEN, ia_refill },
+	{ "Activate", 'A', IA_INVEN | IA_EQUIP, ia_activate },
+	{ "Fire", 'f', IA_INVEN, ia_fire },
+	{ "Throw", 'v', IA_INVEN, ia_any },
+	{ "Hack up", 'h', IA_INVEN, ia_corpse },
+	{ "Cure", 'K', IA_INVEN, ia_corpse },
+	{ "Give to a monster", 'y', IA_INVEN, ia_any },
+	{ "Inscribe", '{', IA_INVEN | IA_EQUIP, ia_any },
+	{ "Uninscribe", '}', IA_INVEN | IA_EQUIP, ia_uninscribe },
+	{ "Drop", 'd', IA_INVEN | IA_EQUIP, ia_any },
+	{ "Destroy", 'k', IA_INVEN, ia_any },
+	{ "Inspect", 'I', IA_INVEN | IA_EQUIP, ia_any },
+};
+
+#define ITEM_ACTIONS ((int)(sizeof(item_actions) / sizeof(item_actions[0])))
+
+static bool_ item_action_fits(int a, int slot)
+{
+	object_type *o_ptr = &p_ptr->inventory[slot];
+
+	if (!o_ptr->k_idx) return (FALSE);
+	if (!(item_actions[a].where & ((slot >= INVEN_WIELD) ? IA_EQUIP : IA_INVEN))) return (FALSE);
+	return (item_actions[a].ok(o_ptr));
+}
+
+/* Queue a command for this item */
+static void item_action_queue(s16b cmd, int slot, bool_ equip)
+{
+	command_new = cmd;
+	item_pre_cmd = cmd;
+	item_pre_slot = slot;
+	item_pre_fresh = TRUE;
+	inven_reopen = equip ? 'e' : 'i';
+}
+
+/* The main action: the first that fits, else inspect */
+static s16b item_main_action(int slot)
+{
+	int a;
+
+	for (a = 0; a < ITEM_ACTIONS; a++)
+	{
+		if (item_actions[a].cmd == 'd') break;
+		if (item_action_fits(a, slot)) return (item_actions[a].cmd);
+	}
+	return ('I');
+}
+
+/* The item menu: every action that fits; returns the command or 0 */
+static s16b item_menu(int slot)
+{
+	cptr names[ITEM_ACTIONS];
+	int keys[ITEM_ACTIONS];
+	s16b cmds[ITEM_ACTIONS];
+	char o_name[80];
+	int n = 0, a, cur = 0;
+
+	for (a = 0; a < ITEM_ACTIONS; a++)
+	{
+		if (!item_action_fits(a, slot)) continue;
+		names[n] = item_actions[a].name;
+		keys[n] = command_key(item_actions[a].cmd);
+		cmds[n++] = item_actions[a].cmd;
+	}
+
+	object_desc(o_name, &p_ptr->inventory[slot], TRUE, 0);
+	a = menu_box(o_name, n, names, keys, NULL, &cur);
+	return ((a >= 0) ? cmds[a] : 0);
+}
+
+static bool_ hostile_in_view(void)
+{
+	int i;
+
+	for (i = 1; i < m_max; i++)
+	{
+		monster_type *m_ptr = &m_list[i];
+
+		if (!m_ptr->r_idx || !m_ptr->ml || (is_friend(m_ptr) > 0)) continue;
+		if (player_has_los_bold(m_ptr->fy, m_ptr->fx)) return (TRUE);
+	}
+	return (FALSE);
+}
+
+/* Called after every command: reopen the list after an item action */
+void inven_screen_after(void)
+{
+	char k = inven_reopen;
+
+	if (item_pre_fresh)
+	{
+		item_pre_fresh = FALSE;
+		return;
+	}
+	item_pre_cmd = 0;
+	inven_reopen = 0;
+
+	if (k && !command_new && !death && !p_ptr->leaving && !hostile_in_view())
+		command_new = k;
+}
+
+static void inven_screen(bool_ equip)
+{
+	static int cursor[2];
+	char out_val[160];
+	int *cur = &cursor[equip ? 1 : 0];
+	int slot;
+	char ch;
+
+	while (1)
+	{
+		s32b total_weight = calc_total_weight();
+
+		/* Note which list we are in */
+		command_wrk = equip;
+
+		/* Save the screen */
+		character_icky = TRUE;
+		Term_save();
+
+		/* Show the list with the cursor (empty slots too) */
+		item_tester_full = TRUE;
+		item_list_cursor = *cur;
+		if (equip) show_equip(); else show_inven();
+		if (item_list_n && (*cur >= item_list_n))
+		{
+			item_list_cursor = *cur = item_list_n - 1;
+			if (equip) show_equip(); else show_inven();
+		}
+		item_list_cursor = -1;
+		item_tester_full = FALSE;
+
+		strnfmt(out_val, 160,
+		        "%s: carrying %ld.%ld pounds (%ld%% of capacity). Command: ",
+		        equip ? "Equipment" : "Inventory",
+		        total_weight / 10, total_weight % 10,
+		        (total_weight * 100) / ((weight_limit()) / 2));
+		prt(out_val, 0, 0);
+
+		ch = inkey();
+
+		/* Restore the screen */
+		Term_load();
+		character_icky = FALSE;
+
+		slot = ((*cur >= 0) && (*cur < item_list_n)) ? item_list_slot[*cur] : ITEM_LIST_NONE;
+		if ((slot != ITEM_LIST_NONE) && !p_ptr->inventory[slot].k_idx) slot = ITEM_LIST_NONE;
+
+		switch (ch)
+		{
+		case ESCAPE:
+		case '0':
+		case '.':
+			return;
+
+		case '8':
+		case '7':
+		case '9':
+			if (item_list_n) *cur = (*cur + item_list_n - 1) % item_list_n;
+			continue;
+
+		case '2':
+		case '1':
+		case '3':
+			if (item_list_n) *cur = (*cur + 1) % item_list_n;
+			continue;
+
+		case '4':
+		case '6':
+			equip = !equip;
+			cur = &cursor[equip ? 1 : 0];
+			continue;
+
+		case KEY_MOUSE:
+			if ((mouse_click_y - item_list_row < 0) ||
+			    (mouse_click_y - item_list_row >= item_list_n)) return;
+			*cur = mouse_click_y - item_list_row;
+			slot = item_list_slot[*cur];
+			if ((slot == ITEM_LIST_NONE) || !p_ptr->inventory[slot].k_idx) continue;
+			/* Fall through: open the item menu */
+
+		case '\r':
+		case '\n':
+		case ' ':
+		case '5':
+			{
+				s16b cmd;
+
+				if (slot == ITEM_LIST_NONE)
+				{
+					bell();
+					continue;
+				}
+				cmd = item_menu(slot);
+				if (!cmd) continue;
+				item_action_queue(cmd, slot, equip);
+				return;
+			}
+
+		case '+':
+		case '-':
+		case '*':
+			if (slot == ITEM_LIST_NONE)
+			{
+				bell();
+				continue;
+			}
+			item_action_queue((ch == '+') ? item_main_action(slot) :
+			                  (ch == '-') ? 'd' : 'I', slot, equip);
+			return;
+		}
+
+		/* Letters: main action; Shift+letter: drop; Ctrl+letter: inspect */
+		{
+			int k = -1;
+			s16b cmd = 0;
+			char c = ch;
+
+			if (islower((byte)c)) cmd = 1;
+			else if (isupper((byte)c)) { cmd = 'd'; c = tolower((byte)c); }
+			else if ((c > 0) && (c < 27)) { cmd = 'I'; c = c + 'a' - 1; }
+
+			if (cmd) k = equip ? label_to_equip(c) : label_to_inven(c);
+			if ((k >= 0) && p_ptr->inventory[k].k_idx)
+			{
+				if (cmd == 1) cmd = item_main_action(k);
+				item_action_queue(cmd, k, equip);
+				return;
+			}
+		}
+
+		/* Anything else is a normal command */
+		command_new = ch;
+
+		/* Mega-Hack -- Don't disable keymaps for this key */
+		request_command_inven_mode = TRUE;
+		return;
+	}
+}
+
+
+/*
  * Display p_ptr->inventory
  */
 void do_cmd_inven(void)
 {
-	char out_val[160];
-
-
-	/* Note that we are in "p_ptr->inventory" mode */
-	command_wrk = FALSE;
-
-	/* Save the screen */
-	character_icky = TRUE;
-	Term_save();
-
-	/* Hack -- show empty slots */
-	item_tester_full = TRUE;
-
-	/* Display the p_ptr->inventory */
-	show_inven();
-
-	/* Hack -- hide empty slots */
-	item_tester_full = FALSE;
-
-
-	{
-		s32b total_weight = calc_total_weight();
-
-		strnfmt(out_val, 160,
-		        "Inventory: carrying %ld.%ld pounds (%ld%% of capacity). Command: ",
-		        total_weight / 10, total_weight % 10,
-		        (total_weight * 100) / ((weight_limit()) / 2));
-	}
-
-	/* Get a command */
-	prt(out_val, 0, 0);
-
-	/* Get a new command */
-	command_new = inkey();
-
-	/* Restore the screen */
-	Term_load();
-	character_icky = FALSE;
-
-
-	/* Process "Escape" */
-	if (command_new == ESCAPE)
-	{
-		/* Reset stuff */
-		command_new = 0;
-	}
-
-	/* Process normal keys */
-	else
-	{
-		/* Mega-Hack -- Don't disable keymaps for this key */
-		request_command_inven_mode = TRUE;
-	}
+	inven_screen(FALSE);
 }
 
 
@@ -79,60 +333,7 @@ void do_cmd_inven(void)
  */
 void do_cmd_equip(void)
 {
-	char out_val[160];
-
-
-	/* Note that we are in "equipment" mode */
-	command_wrk = TRUE;
-
-	/* Save the screen */
-	character_icky = TRUE;
-	Term_save();
-
-	/* Hack -- show empty slots */
-	item_tester_full = TRUE;
-
-	/* Display the equipment */
-	show_equip();
-
-	/* Hack -- undo the hack above */
-	item_tester_full = FALSE;
-
-	/* Build a prompt */
-	{
-		s32b total_weight = calc_total_weight();
-
-		/* Build a prompt */
-		strnfmt(out_val, 160,
-		        "Equipment: carrying %ld.%ld pounds (%ld%% of capacity). Command: ",
-		        total_weight / 10, total_weight % 10,
-		        (total_weight * 100) / ((weight_limit()) / 2));
-	}
-
-	/* Get a command */
-	prt(out_val, 0, 0);
-
-	/* Get a new command */
-	command_new = inkey();
-
-	/* Restore the screen */
-	Term_load();
-	character_icky = FALSE;
-
-
-	/* Process "Escape" */
-	if (command_new == ESCAPE)
-	{
-		/* Reset stuff */
-		command_new = 0;
-	}
-
-	/* Process normal keys */
-	else
-	{
-		/* Mega-Hack -- Don't disable keymaps for this key */
-		request_command_inven_mode = TRUE;
-	}
+	inven_screen(TRUE);
 }
 
 

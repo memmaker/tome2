@@ -719,6 +719,11 @@ extern void do_cmd_spike(void);
 extern void do_cmd_walk(int pickup, bool_ disarm);
 extern void do_cmd_stay(int pickup);
 extern void do_cmd_run(void);
+extern bool_ auto_explore;
+extern void explore_reset(void);
+extern bool_ explore_step(void);
+extern void do_cmd_explore(void);
+extern void do_cmd_stairs(bool_ up);
 extern void do_cmd_rest(void);
 extern int get_shooter_mult(object_type *o_ptr);
 extern void do_cmd_fire(void);
@@ -907,16 +912,16 @@ extern void show_highclass(int building);
 extern errr get_xtra_line(char * file_name, monster_type *m_ptr, char * output);
 
 /* gen_maze.c */
-extern bool_ level_generate_maze();
+extern bool_ level_generate_maze(cptr name);
 
 /* gen_life.c */
-extern bool_ level_generate_life();
+extern bool_ level_generate_life(cptr name);
 extern void evolve_level(bool_ noise);
 
 /* generate.c */
 extern bool_ new_player_spot(int branch);
-extern void add_level_generator(cptr name, bool_ (*generator)(), bool_ stairs, bool_ monsters, bool_ objects, bool_ miscs);
-extern bool_ level_generate_dungeon();
+extern void add_level_generator(cptr name, bool_ (*generator)(cptr), bool_ stairs, bool_ monsters, bool_ objects, bool_ miscs);
+extern bool_ level_generate_dungeon(cptr name);
 extern bool_ generate_fracave(int y0, int x0,int xsize,int ysize,int cutoff,bool_ light,bool_ room);
 extern void generate_hmap(int y0, int x0,int xsiz,int ysiz,int grd,int roug,int cutoff);
 extern bool_ room_alloc(int x,int y,bool_ crowded,int by0,int bx0,int *xx,int *yy);
@@ -1471,6 +1476,19 @@ extern void msg_print(cptr msg);
 extern void cmsg_format(byte color, cptr fmt, ...);
 extern void msg_format(cptr fmt, ...);
 extern void screen_save(void);
+extern int mouse_click_x;
+extern int mouse_click_y;
+extern cptr menu_key_name(int key);
+extern int menu_box(cptr title, int n, cptr *names, const int *keys, const byte *attrs, int *cur);
+extern int command_key(s16b cmd);
+extern s16b do_cmd_menu(void);
+extern s16b item_pre_cmd;
+extern int item_pre_slot;
+extern void inven_screen_after(void);
+extern int item_list_cursor;
+extern int item_list_n;
+extern int item_list_slot[24];
+extern int item_list_row;
 extern void screen_load(void);
 extern void c_put_str(byte attr, cptr str, int row, int col);
 extern void put_str(cptr str, int row, int col);

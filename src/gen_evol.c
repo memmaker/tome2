@@ -130,7 +130,7 @@ void evolve_level(bool_ noise)
 }
 
 
-bool_ level_generate_life()
+bool_ level_generate_life(cptr name)
 {
 	int i, j;
 

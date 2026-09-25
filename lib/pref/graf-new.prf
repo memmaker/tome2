@@ -6845,3 +6845,9 @@ K:757:0x91/0xA4
 # non-defines encountered :
 # Load the special player pictures
 %:xtra-new.prf
+
+# Missing entries (added)
+R:1076:0xB1/0x87
+F:212:0x82/0x9D
+F:213:0x80/0x84
+F:216:0x80/0x84

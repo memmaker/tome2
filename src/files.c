@@ -1214,13 +1214,13 @@ static void display_player_middle(void)
 	if (p_ptr->searching) speed += 10;
 	if (speed > 110)
 	{
-		char s[11];
+		char s[32];
 		(void)sprintf(s, "Fast (+%d)", speed - 110);
 		c_put_str(TERM_L_GREEN, s, 13, (speed >= 120) ? 68 : 69);
 	}
 	else if (speed < 110)
 	{
-		char s[11];
+		char s[32];
 		(void)sprintf(s, "Slow (-%d)", 110 - speed);
 		c_put_str(TERM_L_UMBER, s, 13, (speed <= 100) ? 68 : 69);
 	}

@@ -6,3 +6,9 @@ CMakeCache.txt
 cmake_install.cmake
 install_manifest.txt
 Makefile
+
+# RVIP port: build output, binaries, local saves
+web/dist/
+build/
+/tome
+*.o

@@ -411,3 +411,24 @@ P:^_N_FF9A\r
 
 
 
+
+# Keypad Enter, + - * / . (RVIP: the item menus can be used from the keypad alone)
+
+A:\r
+P:^__FF8D\r
+
+A:+
+P:^__FFAB\r
+
+A:-
+P:^__FFAD\r
+
+A:*
+P:^__FFAA\r
+
+A:/
+P:^__FFAF\r
+
+A:.
+P:^__FFAE\r
+P:^__FF9F\r

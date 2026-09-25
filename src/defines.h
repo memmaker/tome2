@@ -2237,6 +2237,9 @@
  */
 #define USE_EQUIP    0x01	/* Allow equip items */
 #define USE_INVEN    0x02	/* Allow inven items */
+
+/* A row of the item list that cannot be chosen (RVIP) */
+#define ITEM_LIST_NONE	(-32000)
 #define USE_FLOOR    0x04	/* Allow floor items */
 #define USE_EXTRA    0x08	/* Allow extra items */
 #define USE_AUTO     0x10	/* Allow creation of automatizer rule */
