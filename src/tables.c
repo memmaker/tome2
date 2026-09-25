@@ -1598,7 +1598,7 @@ option_type option_info[] =
 	{ &autoload_old_colors, FALSE, 5, 3,
 	  "old_colors", "Use the old(Z) coloring scheme(reload the game)" },
 
-	{ &auto_more, FALSE, 5, 4,
+	{ &auto_more, TRUE, 5, 4,
 	  "auto_more", "Automatically clear '-more-' prompts" },
 
 	{ &player_char_health, TRUE, 5, 6,
