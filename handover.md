@@ -1,6 +1,6 @@
 # Handover: ToME 2.3.11-ah RVIP (2026-09-25)
 
-Task: do the full RVIP (`~/Games/RVIP.md`) for ToME `v2.3.11-ah`, including the web publishing
+Task: do the full RVIP (`~/Games/rvip-tools/RVIP.md`) for ToME `v2.3.11-ah`, including the web publishing
 (`~/Games/rogue2wasm.md`). The user chose 2.3.11-ah instead of the 2.3.8-ah they first named, and said
 "publish once the game is in the required shape": no need to ask again before deploying.
 
