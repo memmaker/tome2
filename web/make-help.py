@@ -87,4 +87,10 @@ parts.append(section('guide', "New player's guide",
                      ''.join(f'<h3>{esc(t)}</h3>{b}' for t, b in guide.items())))
 parts.append(section('web', 'Playing in the browser', WEB))
 
+# RVIP: About this version (rogue2wasm.md: Source and changes)
+parts.append('<h2 id="h-version">About this version</h2><ul>'
+             '<li>Based on <strong>ToME 2.3.11</strong>.</li>'
+             '<li>Original source: <a href="https://github.com/tome2/tome2/tree/dac2d95" target="_blank" rel="noopener">tome2/tome2, commit dac2d95 (tag v2.3.11-ah)</a></li>'
+             '<li>Our changes (port, auto-explore, command menu, web build): '
+             '<a href="https://github.com/memmaker/tome2/compare/dac2d95...main" target="_blank" rel="noopener">memmaker/tome2</a></li></ul>')
 print('\n'.join(parts))
