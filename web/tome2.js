@@ -31,6 +31,7 @@
 
 	function $(id) { return document.getElementById(id); }
 
+	var row0 = [];   /* the main term's message row (row 0), for RvipWM.prompt */
 	function status(msg, isError) {
 		var s = $('status');
 		s.textContent = msg;
@@ -422,6 +423,7 @@
 		},
 
 		clear: function (t) {
+			if (!t) row0 = [];
 			var T = terms[t];
 			T.ctx.fillStyle = '#000';
 			T.ctx.fillRect(0, 0, T.cols * T.cw, T.rows * T.ch);
@@ -429,12 +431,14 @@
 
 		wipe: function (t, x, y, n) {
 			var T = terms[t];
+			if (!t && !y) for (var j = 0; j < n; j++) row0[x + j] = ' ';
 			T.ctx.fillStyle = '#000';
 			T.ctx.fillRect(x * T.cw, y * T.ch, n * T.cw, T.ch);
 		},
 
 		text: function (t, x, y, n, a, s) {
 			var T = terms[t], c = T.ctx, H = Module.HEAPU8;
+			if (!t && !y) for (var j = 0; j < n; j++) row0[x + j] = String.fromCharCode(H[s + j] || 32);
 			c.fillStyle = '#000';
 			c.fillRect(x * T.cw, y * T.ch, n * T.cw, T.ch);
 			c.fillStyle = color(a);
@@ -496,11 +500,12 @@
 			c.strokeRect(x * T.cw + 0.5, y * T.ch + 0.5, w * T.cw - 1, T.ch - 1);
 		},
 
-		fresh: function () { },
+		fresh: function (t) { if (!t) RvipWM.prompt.text(row0.join('')); },   /* the message line over the map */
 
 		bell: function () { },
 
-		nextEvent: function () {
+		nextEvent: function (atCmd) {
+			RvipWM.prompt.wait(atCmd);
 			if (!events.length) return -1;
 			var e = events.shift();
 			if (e.mouse) {

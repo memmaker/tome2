@@ -100,8 +100,8 @@ EM_JS(void, js_apply_layout, (int t, int cols, int rows), {
 });
 
 /* Next queued input: -1 none, else key; mouse events via js_mouse_* */
-EM_JS(int, js_next_event, (void), {
-	return Module.qb.nextEvent();
+EM_JS(int, js_next_event, (int at_cmd), {
+	return Module.qb.nextEvent(at_cmd);
 });
 
 EM_JS(int, js_mouse_x, (void), { return Module.qb.mouseX; });
@@ -189,7 +189,7 @@ static int web_pump(void)
 
 	Term_activate(&web_term[0]);
 
-	while ((k = js_next_event()) >= 0)
+	while ((k = js_next_event(inkey_flag && character_generated)) >= 0)
 	{
 		/* A click: menus and item lists read it as KEY_MOUSE */
 		if (k == 0x10000)
@@ -273,7 +273,7 @@ static errr Term_xtra_web(int n, int v)
 		case TERM_XTRA_BORED: return (web_check_events(0));
 		case TERM_XTRA_EVENT: return (web_check_events(v));
 		case TERM_XTRA_FLUSH:
-			while (js_next_event() >= 0) ;
+			while (js_next_event(0) >= 0) ;
 			return (0);
 		case TERM_XTRA_CLEAR: js_clear(web_idx()); return (0);
 		case TERM_XTRA_DELAY:
