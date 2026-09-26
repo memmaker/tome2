@@ -5615,6 +5615,10 @@ void close_game(void)
 	/* Handle death */
 	if (death)
 	{
+#ifdef USE_WEB
+		{ extern void web_run_end(void); web_run_end(); }
+#endif
+
 		/* Handle retirement */
 		if (total_winner)
 		{

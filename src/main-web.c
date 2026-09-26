@@ -351,6 +351,31 @@ static void hook_quit(cptr str)
 
 const char help_web[] = "Browser front end";
 
+/* Run report (roguelikes-index/server/CONTRACT.md): fire-and-forget GET,
+   never throws, offline just fails silently. Negative ints are omitted. */
+EM_JS(void, js_beacon, (const char *g, const char *ev, const char *name, const char *killer, int depth, int score, int turns, int lvl), {
+	try {
+		var p = [['g', UTF8ToString(g)], ['ev', UTF8ToString(ev)], ['name', name ? UTF8ToString(name) : ''],
+		         ['killer', killer ? UTF8ToString(killer) : ''], ['depth', depth], ['score', score], ['turns', turns], ['lvl', lvl]];
+		var q = p.filter(function (a) { return a[1] !== '' && !(a[1] < 0); })
+		         .map(function (a) { return a[0] + '=' + encodeURIComponent(a[1]); }).join('&');
+		fetch('/roguelikes/beacon?' + q, { keepalive: true, mode: 'no-cors' }).catch(function () {});
+	} catch (e) {}
+});
+
+/* Called from close_game() once the run is over (suicide sets death too) */
+void web_run_end(void)
+{
+	const char *k = died_from, *ev = "death";
+	if (total_winner) ev = "win", k = NULL;
+	else if (streq(k, "Quitting") || streq(k, "Interrupting")) ev = "quit", k = NULL;
+	else if (prefix(k, "a ")) k += 2;
+	else if (prefix(k, "an ")) k += 3;
+	else if (prefix(k, "the ")) k += 4;
+	else if (prefix(k, "The ")) k += 4;
+	js_beacon("tome2", ev, player_name, k, dun_level, total_points(), (int)(turn - START_DAY * 10L), p_ptr->lev);
+}
+
 errr init_web(int argc, char **argv)
 {
 	int i;
