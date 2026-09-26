@@ -4078,11 +4078,14 @@ void get_name(void)
 		/* Go to the "name" field */
 		move_cursor(2, 9);
 
-		/* Save the player name */
-		strcpy(tmp, player_name);
+		/* Save the player name (a new character starts empty) */
+		strcpy(tmp, character_generated ? player_name : "");
 
 		/* Get an input, ignore "Escape" */
-		if (askfor_aux(tmp, 31)) strcpy(player_name, tmp);
+		if (askfor_aux(tmp, 31) && tmp[0]) strcpy(player_name, tmp);
+
+		/* A new character must be named */
+		else if (!character_generated) continue;
 
 		/* Process the player name */
 		process_player_name(FALSE);
