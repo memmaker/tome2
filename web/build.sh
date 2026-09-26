@@ -22,6 +22,7 @@ SRCS=$(sed -n '/^SET(SRCS/,/^)/p' src/CMakeLists.txt | grep -o '[a-z0-9_-]*\.c' 
 	| grep -v '^main' | grep -v '^w_' | sed 's|^|src/|')
 LUA=$(sed -n '/^ADD_LIBRARY (lua/,/)/p' src/lua/CMakeLists.txt | grep -o '[a-z_]*\.c' | sed 's|^|src/lua/|')
 
+mkdir -p web/stage/lib/xtra/sound && cp lib/xtra/sound/Sound.cfg web/stage/lib/xtra/sound/sound.cfg
 emcc -O2 -fcommon -std=gnu99 -DUSE_WEB -DUSE_PRECISE_CMOVIE -Isrc -Isrc/lua -w \
 	$SRCS build/src/w_*.c $LUA src/main.c src/main-web.c \
 	-o "$OUT/tome2-core.js" \
