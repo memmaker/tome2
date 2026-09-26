@@ -4070,7 +4070,7 @@ void get_name(void)
 	clear_from(22);
 
 	/* Prompt and ask */
-	prt("[Enter your player's name above, or hit ESCAPE]", 23, 2);
+	prt("[Enter your player's name above]", 23, 2);
 
 	/* Ask until happy */
 	while (1)
