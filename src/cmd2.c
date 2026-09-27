@@ -5179,14 +5179,10 @@ bool_ explore_step(void)
 
 	auto_explore = FALSE;
 
-	/* Arrived at the stairs we were heading for: take them */
+	/* Arrived at the stairs: stop; the player presses the key again to take them */
 	if (explore_stairs && explore_is_stairs(p_ptr->py, p_ptr->px, explore_stairs, FALSE))
 	{
-		bool_ up = (explore_stairs > 0);
-
 		explore_stairs = 0;
-		if (up) do_cmd_go_up();
-		else do_cmd_go_down();
 		return (FALSE);
 	}
 
@@ -5298,7 +5294,7 @@ void do_cmd_explore(void)
 
 /*
  * '<' / '>': take the stairs here, or walk to the nearest known staircase
- * of that kind and take it on arrival.
+ * of that kind (and stop there).
  */
 void do_cmd_stairs(bool_ up)
 {
