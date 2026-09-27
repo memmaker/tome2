@@ -308,6 +308,11 @@ static errr Term_xtra_web(int n, int v)
 
 static errr Term_curs_web(int x, int y)
 {
+	/* No cursor box on the hero: the sprite already marks him */
+	if (!web_idx() && character_generated && panel_contains(p_ptr->py, p_ptr->px) &&
+	    (x == COL_MAP + (p_ptr->px - panel_col_min) * (use_bigtile ? 2 : 1)) && (y == p_ptr->py - panel_row_prt))
+		return (0);
+
 	js_curs(web_idx(), x, y, 1);
 	return (0);
 }
