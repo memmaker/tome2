@@ -116,6 +116,7 @@
 				});
 				if (s.audio) d.audio = { sound: s.audio.sound === true, music: s.audio.music === true };
 				if (s.wm) d.wm = s.wm;
+				if (s.text === true) d.text = true;
 				if (s.titles) Object.keys(s.titles).forEach(function (k) {
 					if (typeof s.titles[k] === 'string' && d.font[k]) d.titles[k] = s.titles[k].slice(0, 60);
 				});
@@ -123,6 +124,7 @@
 		} catch (err) { /* no layout saved yet */ }
 		L = d;
 		if (L.audio) { audio.sound = !!L.audio.sound; audio.music = !!L.audio.music; renderAudio(); }
+		renderTiles();
 	}
 
 	var saveTimer = 0;
@@ -297,7 +299,7 @@
 	}
 
 	function resetLayout() {
-		L = Object.assign(defaultLayout(), { audio: L.audio, wm: wm.state() });
+		L = Object.assign(defaultLayout(), { audio: L.audio, text: L.text, wm: wm.state() });
 		scheduleLayout();
 		saveLayout();
 	}
@@ -392,6 +394,18 @@
 		$('chk-music').checked = !!audio.music;
 	}
 
+	/* Tiles <-> text, applied by the game at its next command prompt */
+	var tilesSwitch = -1;
+	function toggleTiles() {
+		if (!tilesReady) return;
+		L.text = !L.text;
+		tilesSwitch = L.text ? 0 : 1;
+		saveLayout();
+		renderTiles();
+	}
+	function tilesOn() { return tilesReady && !(L && L.text); }
+	function renderTiles() { $('btn-tiles').textContent = 'Tiles: ' + (tilesOn() ? '16x16' : 'None'); }
+
 	var qb = {
 		sound: function (name) {
 			if (!audio.cfg) loadSoundCfg();
@@ -411,6 +425,9 @@
 		},
 
 		mouseX: 0, mouseY: 0, mouseB: 0,
+
+		tilesWanted: function () { return tilesOn() ? 1 : 0; },
+		tilesSwitch: function () { var s = tilesSwitch; tilesSwitch = -1; return s; },
 
 		termCols: function (t) { return terms[t].cols; },
 		termRows: function (t) { return terms[t].rows; },
@@ -803,6 +820,7 @@
 		tilesReady = ok;
 		tilesDone = true;
 		if (!ok) status('Could not load the tile set; using text.', true);
+		if (L) renderTiles();
 		if (tilesWait) Module.removeRunDependency('tiles');
 	}
 	tiles.onload = function () { tilesFinished(true); };
@@ -824,7 +842,9 @@
 		$('chk-music').onchange = function () { toggleAudio('music'); };
 		RvipWM.dropdown($('btn-audio'), $('menu-audio'));
 		RvipWM.dropdown($('btn-file'), $('menu-file'));
+		$('btn-tiles').onclick = toggleTiles;
 		renderAudio();
+		renderTiles();
 
 		/* Buttons never take the keyboard focus away from the game */
 		document.querySelectorAll('button').forEach(function (b) {

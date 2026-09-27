@@ -100,6 +100,16 @@ EM_JS(void, js_apply_layout, (int t, int cols, int rows), {
 });
 
 /* Next queued input: -1 none, else key; mouse events via js_mouse_* */
+/* Tiles (1) or text (0) as the page's Tiles button says */
+EM_JS(int, js_tiles_wanted, (void), {
+	return Module.qb.tilesWanted();
+});
+
+/* -1: no change, else the new Tiles setting */
+EM_JS(int, js_tiles_switch, (void), {
+	return Module.qb.tilesSwitch();
+});
+
 EM_JS(int, js_next_event, (int at_cmd), {
 	return Module.qb.nextEvent(at_cmd);
 });
@@ -179,6 +189,29 @@ static void web_apply_layout(void)
 }
 
 
+/* 16x16 tiles in big-tile mode (as the X11 build's -g -b), or text */
+static void web_graphics(int on)
+{
+	use_graphics = arg_graphics = on ? TRUE : FALSE;
+	arg_bigtile = on ? TRUE : FALSE;
+	if (!web_term[0].hgt) use_bigtile = arg_bigtile;
+	ANGBAND_GRAF = "new";
+}
+
+/* The page's Tiles button, applied at the command prompt */
+static void web_switch_graphics(int on)
+{
+	term *old = Term;
+
+	web_graphics(on);
+	reset_visuals();
+
+	/* A bigtile change needs the map term resized (z-term re-reads arg_bigtile) */
+	Term_activate(&web_term[0]);
+	Term_resize(Term->wid, Term->hgt);
+	Term_activate(old);
+}
+
 /* Move queued browser input into the main term's key queue */
 static int web_pump(void)
 {
@@ -200,6 +233,19 @@ static int web_pump(void)
 		}
 		else Term_keypress(k);
 		got = 1;
+	}
+
+	/* Tiles <-> text: only while waiting for a command */
+	if (inkey_flag && character_generated && !got)
+	{
+		int on = js_tiles_switch();
+
+		if ((on >= 0) && (on != (use_graphics ? 1 : 0)))
+		{
+			web_switch_graphics(on);
+			Term_keypress(KTRL('R'));	/* redraw everything */
+			got = 1;
+		}
 	}
 
 	/* Safe autosave: only while waiting for a command */
@@ -388,11 +434,8 @@ errr init_web(int argc, char **argv)
 	(void)argc;
 	(void)argv;
 
-	/* 16x16 tiles in big-tile mode, as in the X11 build (-g -b) */
-	use_graphics = TRUE;
-	arg_graphics = TRUE;
-	use_bigtile = arg_bigtile = TRUE;
-	ANGBAND_GRAF = "new";
+	/* 16x16 tiles in big-tile mode, or text, as the page's Tiles button says */
+	web_graphics(js_tiles_wanted());
 
 	/*
 	 * Web defaults (init_angband() copies o_norm into the option flags;
