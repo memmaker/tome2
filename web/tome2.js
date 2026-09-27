@@ -167,14 +167,14 @@
 			wins: [{ id: 'main', title: 'Map' }, { id: 'inv', title: 'Inventory' }, { id: 'msg', title: 'Messages' }, { id: 'mon', title: 'Visible' }, { id: 'rec', title: 'Recall' }, { id: 'eqp', title: 'Equipment' }],
 			multi: { d: 'v', r: s.bottom, a: { d: 'h', r: s.side, a: 'main', b: { d: 'v', r: s.inv, a: 'inv', b: 'mon' } }, b: 'msg' },
 			single: 'main',
-			state: L.wm, noFont: 'main',
+			state: L.wm,
 			save: function (st) { L.wm = st; saveLayout(); },
 			layout: function (r) {
 				rects = r;
 				TERMS.forEach(function (d, i) { if (terms[i]) fitCanvas(i); });
 				scheduleSoon();
 			},
-			font: function (id, d) { zoomSub(id, d); },
+			font: function (id, d) { if (id === 'main') zoomMain(d); else zoomSub(id, d); },   /* map: A-/A+ on its title bar */
 			onReset: resetLayout
 		});
 		wm.apply();
@@ -820,8 +820,6 @@
 		$('btn-new').onclick = newGame;
 		$('btn-help').onclick = toggleHelp;
 		$('help-close').onclick = toggleHelp;
-		$('btn-zoom-in').onclick = function () { zoomMain(1); };
-		$('btn-zoom-out').onclick = function () { zoomMain(-1); };
 		$('btn-sound').onclick = function () { toggleAudio('sound'); };
 		$('btn-music').onclick = function () { toggleAudio('music'); };
 		renderAudio();
