@@ -39,6 +39,9 @@ cp web/index.html web/tome2.js "$OUT/"
 mkdir -p "$OUT/sound" && cp lib/xtra/sound/*.wav "$OUT/sound/"
 cp lib/xtra/sound/Sound.cfg "$OUT/sound/sound.cfg"
 mkdir -p "$OUT/music" && cp web/music/new_town.ogg "$OUT/music/"
+# Font choosers: the index page's fonts/*.woff (loaded from ../fonts/)
+FONTDIR="${FONTS:-$HOME/Games/roguelikes-index/fonts}"
+(ls "$FONTDIR" 2>/dev/null | sed -n 's/\.woff$//p') | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().split()))' > "$OUT/fonts.json"
 python3 web/make-help.py > "$OUT/help.html"
 rm -rf web/stage
 ls -la "$OUT"
