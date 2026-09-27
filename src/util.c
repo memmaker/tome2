@@ -3688,12 +3688,9 @@ static const cmd_menu_entry cmd_menu_items[] =
 
 static const cmd_menu_entry cmd_menu_move[] =
 {
-	{ "Walk (with pickup)", ';' },
-	{ "Walk (flip pickup)", '-' },
-	{ "Run", '.' },
 	{ "Auto-explore", 'X' },
-	{ "Go up staircase (walks to it)", '<' },
-	{ "Go down staircase (walks to it)", '>' },
+	{ "Go up staircase (walks there)", '<' },
+	{ "Go down staircase (walks there)", '>' },
 	{ "Enter store", '_' },
 	{ "Stay still (with pickup)", ',' },
 	{ "Stay still (flip pickup)", 'g' },
@@ -3779,7 +3776,7 @@ static const struct
 cmd_menu_groups[] =
 {
 	{ "Items", cmd_menu_items },
-	{ "Moving, resting, searching", cmd_menu_move },
+	{ "Exploring, resting, searching", cmd_menu_move },
 	{ "Doors, digging and actions", cmd_menu_alter },
 	{ "Magic and skills", cmd_menu_magic },
 	{ "Looking and information", cmd_menu_look },
