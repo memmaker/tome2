@@ -26,7 +26,7 @@ SAVING = '''<ul>
 <li><strong>Saving is automatic.</strong> Every save goes straight into this browser's storage (IndexedDB). The game saves on every level change, every two minutes while it waits for your next command, and whenever you switch to another tab or window.</li>
 <li><kbd>Ctrl+S</kbd> saves and keeps playing. <kbd>Ctrl+X</kbd> saves and quits; reload the page (or press <em>Play again</em>) to continue. Both are also in the <kbd>Enter</kbd> menu under <em>Options, saving and system</em>.</li>
 <li>Reloading or closing the tab loses at most the last couple of minutes. The browser asks before you leave a running game.</li>
-<li>Each browser keeps <strong>one character per module</strong> (one ToME, one Theme). When the page starts, pick the module: the character of that module is loaded, or a new one is created. <em>New character</em> deletes the saved characters and starts over.</li>
+<li>Each browser keeps <strong>one character per module</strong> (one ToME, one Theme). When the page starts, pick the module: the character of that module is loaded, or a new one is created. <em>File ▾ → New game</em> deletes the saved characters and starts over.</li>
 <li><em>Export save</em> downloads the savefile you played last; <em>Import save</em> loads one (ToME or Theme). Use them to keep a backup or to move a character to another browser or computer.</li>
 <li>Your window layout, zoom levels and window titles are stored with the savegame, in the same browser storage, and survive a new character.</li>
 <li>Private/incognito windows and "clear site data" delete the stored game. Export first if the character matters.</li>

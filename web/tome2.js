@@ -412,7 +412,7 @@
 	/* Map font select on the Map title bar, text mode only (shown on hover) */
 	var mapSel = document.createElement('select');
 	mapSel.title = 'Map font (text mode)';
-	mapSel.innerHTML = '<option value="">default</option>';
+	mapSel.innerHTML = '<option value="">Default font</option>';
 	mapSel.addEventListener('pointerdown', function (e) { e.stopPropagation(); });   /* not a window drag */
 	function renderMapSel() {
 		var bs = document.querySelector('#t-main .wm-btns');
